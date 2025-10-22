@@ -1,0 +1,10 @@
+{
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.git/**": true,
+    "**/dist/**": true,
+    "**/.vite/**": true,
+    "**/.cache/**": true,
+    "**/OneDrive/**": true
+  }
+}
