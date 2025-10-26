@@ -187,6 +187,10 @@ const Profile = () => {
       </div>
       {/* Edit Profile Modal */}
       {showEdit && <ProfileModal setShowEdit = {setShowEdit}/>}
+      <form enctype="multipart/form-data">
+  <input type="file" name="profile" />
+  <input type="file" name="cover" />
+</form>
     </div>
   ) : (<Loading />)
 }
