@@ -1,145 +1,70 @@
-// import React, { useEffect, useState } from 'react'
-// import { useParams } from 'react-router-dom'
-// import { dummyPostsData, dummyUserData } from '../assets/assets'
-// import Loading from '../components/Loading'
-// import UserProfileInfo from '../components/UserProfileInfo'
-// import PostCard from '../components/PostCard'
-// import { ActivityIcon, Link } from 'lucide-react'
-// import moment from 'moment'
-
-// const Profile = () => {
-
-//   const { profileId } = useParams()
-//   const [user, setUser] = useState(null)
-//   const [posts, setPosts] = useState([])
-//   const [activeTab, setActiveTab] = useState('posts')
-//   const [showEdit, setShowEdit] = useState(false)
-
-//   const fetchUser = async () => {
-//     setUser(dummyUserData)
-//     setPosts(dummyPostsData)
-//   }
-
-//   useEffect(() => {
-//     fetchUser()
-//   }, [])
-
-//   return user ? (
-//     <div className='relative h-full overflow-y-scroll bg-gray-50 p-6'>
-//       <div className='max-w-3xl mx-auto'>
-//         {/* Profile Card */}
-//         <div className='bg-white rounded-2xl shadow overflow-hidden'>
-//           {/* Cover Photo */}
-//           <div className='h-40 md:h-56 bg-gradient-to-r from-indigo-200
-//              via-purple-200 to-pink-200'>
-//             {user.cover_photo && <img src={user.cover_photo} alt=""
-//               className='w-full h-full object-cover' />}
-//           </div>
-//           {/* User Info */}
-//           <UserProfileInfo user={user} posts={posts} profileId={profileId}
-//             setShowEdit={setShowEdit} />
-//         </div>
-
-//         {/* Tabs */}
-//         <div className='mt-6'>
-//           <div className='bg-white rounded-xl shadow p-1 flex max-w-md mx-auto'>
-//             {["posts", "media", "likes"].map((tab) => (
-//               <button onClick={() => setActiveTab(tab)} key={tab} className={`flex-1 px-4 py-2 text-sm font-medium
-//                 rounded-lg transition-colors cursor-pointer ${activeTab === tab ?
-//                   "bg-indigo-600 text-white" : "text-gray-600 hover:text-gray-900"}`}>
-//                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
-//               </button>
-//             ))}
-//           </div>
-//           {/* Posts*/}
-//           {activeTab === 'posts' && (
-//             <div className='mt-6 flex flex-col items-center gap-6'>
-//               {posts.map((post) => (
-//                 <div key={post._id}>
-//                   <PostCard post={post} />
-//                 </div>
-//               ))}
-//             </div>
-//           )}
-
-//           {/* Media */}
-//           {activeTab === 'media' && (
-//             <div className='flex flex-wrap mt-6 max-w-6xl'>
-//               {
-//                 posts.filter((post)=>post.image_urls.length > 0).map((post)=>(
-//                   <>
-//                   {post.image_urls.map((image, index)=>(
-//                     <Link target='_blank' to={image} key={index}
-//                     className='relative group'>
-//                       <img src={image} key={index} className='h64 aspect-video
-//                       object-cover' alt="" />
-//                       <p className='absolute bottom-0 right-0 text-xs p-1 px-3 
-//                       backdrop-blur-xl text-white opacity-0 group-hover:opacity-100
-//                       transition duration-300'>Posted {moment(post.createdAt).
-//                       fromNow()}</p>
-//                     </Link>
-//                   ))}
-
-//                   </>
-//                 ))
-//               }
-
-//             </div>
-//           )}
-//         </div>
-//       </div>
-
-//     </div>
-//   ) : (<Loading />)
-// }
-
-// export default Profile
-
-
-import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { dummyPostsData, dummyUserData } from '../assets/assets'
-import Loading from '../components/Loading'
+import React, {useState}from 'react'
+import {Link, useParams } from 'react-router-dom'
+import {dummyPostsData, dummyUserData} from '../assets/assets'
+import { useEffect } from 'react'
 import UserProfileInfo from '../components/UserProfileInfo'
 import PostCard from '../components/PostCard'
-import { Link } from 'react-router-dom'; // Renamed Link to LucideLink to avoid conflict
 import moment from 'moment'
 import ProfileModal from '../components/ProfileModal'
+import Loading from '../components/Loading'
+import toast from 'react-hot-toast'
+import { useSelector } from 'react-redux'
+import { useAuth } from '@clerk/clerk-react'
+import api from '../api/axios'
+
 
 const Profile = () => {
+  const currentUser = useSelector((state) => state.user.value)
 
+  const {getToken } = useAuth()
   const { profileId } = useParams()
   const [user, setUser] = useState(null)
   const [posts, setPosts] = useState([])
   const [activeTab, setActiveTab] = useState('posts')
   const [showEdit, setShowEdit] = useState(false)
 
-  const fetchUser = async () => {
-    setUser(dummyUserData)
-    setPosts(dummyPostsData)
+  const fetchUser = async (profileId) => {
+    const token =await getToken()
+    try{
+      const {data} = await api.post(`api/user/profiles`, {profileId}, {
+        headers: {Authorization: `Bearer ${token}`}
+      })
+      if(data.success){
+        setUser(data.profile)
+        setPosts(data.posts)
+      }else{
+        toast.error(data.message)
+      }
+    }catch(error){
+      toast.error(error.message)
+    }
+
   }
 
   useEffect(() => {
-    fetchUser()
-  }, [])
+    if(profileId){
+      fetchUser(profileId)
+    }else{
+      fetchUser(currentUser._id) 
+    }
+  },[profileId, currentUser])
 
   return user ? (
     <div className='relative h-full overflow-y-scroll bg-gray-50 p-6'>
       <div className='max-w-3xl mx-auto'>
-        {/* Profile Card */}
+        // Profile Card
         <div className='bg-white rounded-2xl shadow overflow-hidden'>
-          {/* Cover Photo */}
+          // Cover Photo
           <div className='h-40 md:h-56 bg-gradient-to-r from-indigo-200
             via-purple-200 to-pink-200'>
-            {user.cover_photo && <img src={user.cover_photo} alt=""
+            {user.cover_picture && <img src={user.cover_picture} alt=""
               className='w-full h-full object-cover' />}
           </div>
-          {/* User Info */}
+          // User Info
           <UserProfileInfo user={user} posts={posts} profileId={profileId}
             setShowEdit={setShowEdit} />
         </div>
-
-        {/* Tabs */}
+        // Tabs
         <div className='mt-6'>
           <div className='bg-white rounded-xl shadow p-1 flex max-w-md mx-auto'>
             {["posts", "media", "likes"].map((tab) => (
@@ -150,29 +75,30 @@ const Profile = () => {
               </button>
             ))}
           </div>
-          {/* Posts*/}
+          // Posts//
           {activeTab === 'posts' && (
+            
             <div className='mt-6 flex flex-col items-center gap-6'>
-              {/* Added a key={post._id} here as well, although your original code had it on the inner div, 
-                 it's better to put it on the direct child of the map */}
-              {posts.map((post) => (
-                <PostCard key={post._id} post={post} />
-              ))}
+              {posts.length > 0 ? (
+                posts.map((post) => (
+                  <PostCard key={post._id} post={post} />
+                ))
+              ) : (
+                <p className='text-gray-500'>No posts yet.</p>
+              )}
             </div>
           )}
-
-          {/* Media */}
+            // Media //
           {activeTab === 'media' && (
             <div className='flex flex-wrap mt-6 max-w-6xl gap-1'>
               {
-                posts.filter((post) => post.image_urls.length > 0).map((post) => (
+                posts.filter((post) => post.image_urls?.length > 0).map((post) => (
                   <>
                     {post.image_urls.map((image, index) => (
-                      <Link target='_blank' to={image} key={index}
-                        className='relative group '>
-                        <img src={image} key={index} className='w-63 aspect-video 
+                      <Link target='_blank' to={image} key={index} className='relative group '>
+                        <img src={image} className='w-63 aspect-video
                         object-cover' alt="" />
-                        <p className='absolute bottom-0 right-0 text-xs p-1 px-3 
+                        <p className='absolute bottom-0 right-0 text-xs p-1 px-3
                         backdrop-blur-xl text-white opacity-0 group-hover:opacity-100
                         transition duration-300'>Posted {moment(post.createdAt).
                             fromNow()}</p>
@@ -185,14 +111,10 @@ const Profile = () => {
           )}
         </div>
       </div>
-      {/* Edit Profile Modal */}
-      {showEdit && <ProfileModal setShowEdit = {setShowEdit}/>}
-      <form enctype="multipart/form-data">
-  <input type="file" name="profile" />
-  <input type="file" name="cover" />
-</form>
-    </div>
-  ) : (<Loading />)
-}
+      // Edit Profile Modal //
+      {showEdit && <ProfileModal setShowEdit={setShowEdit} />}
+    </div>          
+              ) : (<Loading />)
+            }
 
 export default Profile
