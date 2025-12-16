@@ -1,0 +1,18 @@
+# render.yaml for a Node.js Web Service
+
+services:
+  - type: web
+    name: my-web-app
+    env: node
+    repo: https://github.com/SHIVAM573/MyWebsite
+    branch: main
+    # Command to install dependencies
+    buildCommand: npm install 
+    # Command to start the server
+    startCommand: node index.js 
+    plan: free # or starter
+    pullRequestPreviewsEnabled: true
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      # Add other environment variables here if needed
